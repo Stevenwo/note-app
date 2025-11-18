@@ -1,11 +1,14 @@
 import TagsSidebar from './TagsSidebar'
+import NotebooksSidebar from './NotebooksSidebar'
 
 interface SidebarProps {
   onTagClick?: (tagName: string) => void
   selectedTag?: string | null
+  onNotebookClick?: (notebookId: string | null) => void
+  selectedNotebook?: string | null
 }
 
-export default function Sidebar({ onTagClick, selectedTag }: SidebarProps = {}) {
+export default function Sidebar({ onTagClick, selectedTag, onNotebookClick, selectedNotebook }: SidebarProps = {}) {
   return (
     <aside className="w-64 glass border-r border-white/5 flex flex-col overflow-hidden">
       {/* Header */}
@@ -64,23 +67,8 @@ export default function Sidebar({ onTagClick, selectedTag }: SidebarProps = {}) 
             <span className="ml-auto text-xs text-gray-400">12</span>
           </a>
         </div>
-        
-        <div className="px-2 mt-4 space-y-0.5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Notebooks</p>
-          
-          <a href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5">
-            <div className="w-2.5 h-2.5 rounded-sm bg-blue-500"></div>
-            <span className="text-sm">Cambodia</span>
-            <span className="ml-auto text-xs text-gray-500">2</span>
-          </a>
-          
-          <a href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5">
-            <div className="w-2.5 h-2.5 rounded-sm bg-green-500"></div>
-            <span className="text-sm">PostgreSQL</span>
-            <span className="ml-auto text-xs text-gray-500">5</span>
-          </a>
-        </div>
 
+        <NotebooksSidebar onNotebookClick={onNotebookClick} selectedNotebook={selectedNotebook} />
         <TagsSidebar onTagClick={onTagClick} selectedTag={selectedTag} />
       </nav>
     </aside>

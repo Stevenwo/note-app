@@ -17,6 +17,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('created_at_desc')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [selectedNotebook, setSelectedNotebook] = useState<string | null>(null)
 
   useEffect(() => {
     const savedViewMode = localStorage.getItem('noteViewMode') as 'grid' | 'list';
@@ -163,12 +164,24 @@ export default function Home() {
     // Toggle tag filter - if clicking the same tag, clear the filter
     setSelectedTag(selectedTag === tagName ? null : tagName)
     setSearchQuery('') // Clear search when filtering by tag
+    setSelectedNotebook(null) // Clear notebook filter when selecting tag
   }
 
-  // Filter notes by selected tag (client-side for now)
+  const handleNotebookClick = (notebookId: string | null) => {
+    // Toggle notebook filter - if clicking the same notebook, clear the filter
+    setSelectedNotebook(selectedNotebook === notebookId ? null : notebookId)
+    setSearchQuery('') // Clear search when filtering by notebook
+    setSelectedTag(null) // Clear tag filter when selecting notebook
+  }
+
+  // Filter notes by selected tag or notebook (client-side for now)
   const getDisplayNotes = () => {
     if (searchQuery) {
       return searchResults
+    }
+    if (selectedNotebook) {
+      // Filter notes by notebook
+      return notes.filter(note => note.notebook_id === selectedNotebook)
     }
     if (selectedTag) {
       // Note: This is client-side filtering. In production, you'd want to fetch from backend
@@ -181,7 +194,12 @@ export default function Home() {
   return (
     <>
       <div className="flex h-screen overflow-hidden">
-        <Sidebar onTagClick={handleTagClick} selectedTag={selectedTag} />
+        <Sidebar
+          onTagClick={handleTagClick}
+          selectedTag={selectedTag}
+          onNotebookClick={handleNotebookClick}
+          selectedNotebook={selectedNotebook}
+        />
         <main className="flex-1 overflow-y-auto">
           <Header 
             searchQuery={searchQuery}

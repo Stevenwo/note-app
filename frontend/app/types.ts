@@ -35,3 +35,26 @@ export interface UpdateTagRequest {
   name?: string
   color?: string
 }
+
+export interface Notebook {
+  id: string
+  user_id: string
+  name: string
+  color: string
+  created_at: string
+  updated_at: string
+}
+
+export interface NotebookWithCount extends Notebook {
+  note_count: number
+}
+
+export interface CreateNotebookRequest {
+  name: string
+  color?: string
+}
+
+export interface UpdateNotebookRequest {
+  name?: string
+  color?: string
+}

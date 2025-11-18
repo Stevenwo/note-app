@@ -82,3 +82,26 @@ pub struct TagWithCount {
     pub updated_at: DateTime<Utc>,
     pub note_count: i64,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct CreateNotebookRequest {
+    pub name: String,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateNotebookRequest {
+    pub name: Option<String>,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct NotebookWithCount {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub name: String,
+    pub color: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub note_count: i64,
+}
