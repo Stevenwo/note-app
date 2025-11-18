@@ -1,0 +1,662 @@
+{
+  "task_title": "Implement Search, View Toggle, and Sort Features",
+  "phase": "Phase 1 - Core Features Completion",
+  "context": {
+    "description": "Building upon the successfully tested delete and star functionality, we now implement the remaining Phase 1 features: search (title and content), list/grid view toggle, and sort options. These features complete the core note-taking experience before moving to Phase 2 (tags, notebooks, bulk actions).",
+    "completed_features": [
+      "Import system (557 notes, 1,496 images)",
+      "Netflix-inspired card UI with glassmorphism",
+      "Note display with modals",
+      "Delete functionality (fully tested ✅)",
+      "Star functionality (fully tested ✅)"
+    ],
+    "tech_stack": {
+      "frontend": "Next.js 14 with TypeScript, Tailwind CSS",
+      "backend": "Rust with Axum, SQLx for database",
+      "database": "PostgreSQL",
+      "testing": "Playwright for automated UI tests"
+    },
+    "current_state": {
+      "services_running": "All services verified working (Frontend:3000, Backend:8080, PostgreSQL:5432)",
+      "notes_count": 557,
+      "test_status": "All Playwright tests passing (delete, star, visual verification)"
+    }
+  },
+  "implementation_order": [
+    {
+      "priority": 1,
+      "feature": "Search Functionality",
+      "reason": "Most requested feature, high impact on usability"
+    },
+    {
+      "priority": 2,
+      "feature": "List/Grid View Toggle",
+      "reason": "Enables different browsing modes, complements search"
+    },
+    {
+      "priority": 3,
+      "feature": "Sort Options",
+      "reason": "Improves organization, works with both view modes"
+    }
+  ],
+  "feature_1_search": {
+    "name": "Search Functionality",
+    "description": "Real-time search through note titles and content with visual feedback",
+    "user_story": "As a user, I want to search my notes by title or content so I can quickly find specific notes among 557+ entries",
+    "acceptance_criteria": [
+      "Search input appears prominently in Header component",
+      "Search works on both title and content fields",
+      "Results update in real-time as user types (debounced)",
+      "Clear indication when no results found",
+      "Search is case-insensitive",
+      "Option to clear search quickly"
+    ],
+    "backend_implementation": {
+      "new_endpoint": {
+        "method": "GET",
+        "path": "/api/notes/search",
+        "query_parameters": {
+          "q": "Search query string (required)",
+          "user_id": "UUID of user (default: hardcoded user)",
+          "limit": "Max results (optional, default: 100)",
+          "offset": "Pagination offset (optional, default: 0)"
+        },
+        "response": {
+          "type": "array",
+          "items": "Note objects matching search query"
+        },
+        "example_request": "GET /api/notes/search?q=plumbing&user_id=1&limit=20",
+        "example_response": "[{id, title, content, is_starred, created_at, ...}, ...]"
+      },
+      "sql_query_approach": {
+        "method": "PostgreSQL full-text search or ILIKE",
+        "simple_approach": "WHERE (LOWER(title) LIKE LOWER($1) OR LOWER(content) LIKE LOWER($1))",
+        "search_pattern": "'%' || $query || '%'",
+        "performance_note": "For 557 notes, simple ILIKE is sufficient. Consider GIN index for 10k+ notes"
+      },
+      "files_to_modify": [
+        {
+          "file": "backend/src/routes/notes.rs",
+          "action": "Add search_notes function",
+          "template": "pub async fn search_notes(State(state): State<AppState>, Query(params): Query<SearchParams>) -> Result<Json<Vec<Note>>, StatusCode>",
+          "implementation_steps": [
+            "Define SearchParams struct with q, user_id, limit, offset fields",
+            "Build SQL query with WHERE clause for title and content",
+            "Use bind() for parameterized query (prevent SQL injection)",
+            "Execute query with fetch_all()",
+            "Return JSON response"
+          ]
+        },
+        {
+          "file": "backend/src/main.rs",
+          "action": "Register new route",
+          "code_to_add": ".route(\"/api/notes/search\", get(routes::notes::search_notes))"
+        }
+      ],
+      "testing_commands": [
+        {
+          "description": "Test search endpoint directly",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes/search?q=test' -Method GET | ConvertTo-Json -Depth 5",
+          "expected": "Array of notes with 'test' in title or content"
+        },
+        {
+          "description": "Test empty search",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes/search?q=' -Method GET",
+          "expected": "Empty array or all notes (depending on implementation)"
+        },
+        {
+          "description": "Test case-insensitivity",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes/search?q=TEST' -Method GET",
+          "expected": "Same results as lowercase 'test'"
+        }
+      ]
+    },
+    "frontend_implementation": {
+      "new_components": [
+        {
+          "name": "SearchBar",
+          "location": "frontend/app/components/SearchBar.tsx",
+          "props": {
+            "value": "string - current search query",
+            "onChange": "(query: string) => void - callback when search changes",
+            "onClear": "() => void - callback to clear search",
+            "placeholder": "string (optional) - default: 'Search notes...'"
+          },
+          "features": [
+            "Debounced input (300ms delay)",
+            "Clear button (X icon) appears when text entered",
+            "Search icon on left side",
+            "Keyboard shortcuts (Cmd/Ctrl+K to focus)",
+            "Loading indicator during search"
+          ],
+          "styling": "Match glassmorphism theme with backdrop-blur, border-purple-500/30, dark background"
+        }
+      ],
+      "files_to_modify": [
+        {
+          "file": "frontend/app/components/Header.tsx",
+          "action": "Add SearchBar component",
+          "implementation": [
+            "Import SearchBar component",
+            "Add state: const [searchQuery, setSearchQuery] = useState('')",
+            "Pass search query to parent (page.tsx) via callback prop",
+            "Position SearchBar in center of header with max-width"
+          ]
+        },
+        {
+          "file": "frontend/app/page.tsx",
+          "action": "Implement search logic",
+          "implementation": [
+            "Add state: const [searchQuery, setSearchQuery] = useState('')",
+            "Add state: const [searchResults, setSearchResults] = useState<any[]>([])",
+            "Add state: const [isSearching, setIsSearching] = useState(false)",
+            "Create handleSearch function with debounce (use useCallback)",
+            "Fetch from /api/notes/search?q={query}",
+            "Display searchResults when query present, otherwise show all notes",
+            "Show 'No results found' message when searchResults.length === 0 and query !== ''"
+          ],
+          "debounce_implementation": {
+            "approach": "Use useEffect with setTimeout",
+            "code_example": "useEffect(() => { const timer = setTimeout(() => { if (searchQuery) fetchSearchResults() }, 300); return () => clearTimeout(timer) }, [searchQuery])"
+          }
+        },
+        {
+          "file": "frontend/app/components/NotesGrid.tsx",
+          "action": "Add empty state for no search results",
+          "implementation": [
+            "Check if notes.length === 0 and isSearchMode prop is true",
+            "Display search-specific empty state with message and clear search button"
+          ]
+        }
+      ],
+      "keyboard_shortcuts": {
+        "focus_search": {
+          "keys": "Cmd/Ctrl + K",
+          "action": "Focus search input",
+          "implementation": "useEffect with document.addEventListener('keydown'), check for metaKey/ctrlKey + 'k'"
+        },
+        "clear_search": {
+          "keys": "Escape",
+          "action": "Clear search when input focused",
+          "implementation": "onKeyDown handler on input element"
+        }
+      }
+    },
+    "testing_checklist": {
+      "manual_tests": [
+        "Type in search box - results update after 300ms",
+        "Search for known note title - appears in results",
+        "Search for content text - finds notes with that text",
+        "Search for nonexistent text - shows 'No results found'",
+        "Clear search with X button - returns to all notes",
+        "Press Cmd/Ctrl+K - search input gains focus",
+        "Press Escape in search - clears search query",
+        "Search is case-insensitive - 'TEST' finds 'test'"
+      ],
+      "playwright_tests": [
+        {
+          "test_name": "Search functionality",
+          "steps": [
+            "Focus search input with Cmd+K",
+            "Type search query",
+            "Wait for results to appear",
+            "Verify network request to /api/notes/search",
+            "Count visible note cards matches search results",
+            "Click clear button",
+            "Verify all notes reappear"
+          ]
+        }
+      ]
+    }
+  },
+  "feature_2_view_toggle": {
+    "name": "List/Grid View Toggle",
+    "description": "Allow users to switch between grid (cards) and list (compact rows) views",
+    "user_story": "As a user, I want to toggle between grid and list views so I can browse my notes in different layouts depending on my task",
+    "acceptance_criteria": [
+      "Toggle button in Header switches between grid and list views",
+      "Grid view: Current card layout (4-5 columns)",
+      "List view: Compact rows with title, preview, metadata",
+      "View preference persists in localStorage",
+      "Smooth transition between views",
+      "Both delete and star buttons work in both views"
+    ],
+    "backend_implementation": {
+      "changes_needed": "NONE - Uses existing /api/notes endpoint",
+      "note": "This is purely a frontend feature"
+    },
+    "frontend_implementation": {
+      "new_components": [
+        {
+          "name": "ViewToggle",
+          "location": "frontend/app/components/ViewToggle.tsx",
+          "props": {
+            "view": "'grid' | 'list' - current view mode",
+            "onChange": "(view: 'grid' | 'list') => void - callback when view changes"
+          },
+          "ui_design": {
+            "type": "Toggle button with icons",
+            "grid_icon": "Grid icon (3x3 squares)",
+            "list_icon": "List icon (horizontal lines)",
+            "active_state": "Purple background for selected view",
+            "inactive_state": "Gray/transparent for unselected"
+          }
+        },
+        {
+          "name": "NotesList",
+          "location": "frontend/app/components/NotesList.tsx",
+          "description": "Alternative to NotesGrid for list view",
+          "props": {
+            "notes": "Note[] - array of notes to display",
+            "onNoteClick": "(note: Note) => void",
+            "onStarNote": "(noteId: string, e: React.MouseEvent) => void",
+            "onDeleteNote": "(noteId: string) => void"
+          },
+          "layout": {
+            "structure": "Each row contains: thumbnail (small), title, content preview (1 line), metadata (date, starred), action buttons",
+            "row_height": "~80px",
+            "columns": "Thumbnail (60px) | Content (flex-1) | Actions (80px)",
+            "hover_effect": "Background color change, show action buttons"
+          },
+          "features": [
+            "Alternating row colors for readability",
+            "Truncated content preview (max 100 chars)",
+            "Same hover interactions as grid",
+            "Responsive: stacks on mobile"
+          ]
+        }
+      ],
+      "files_to_modify": [
+        {
+          "file": "frontend/app/components/Header.tsx",
+          "action": "Add ViewToggle component",
+          "implementation": [
+            "Import ViewToggle",
+            "Receive viewMode and onViewChange props from parent",
+            "Position toggle next to search bar"
+          ]
+        },
+        {
+          "file": "frontend/app/page.tsx",
+          "action": "Implement view mode state",
+          "implementation": [
+            "Add state: const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')",
+            "Load initial view from localStorage: useEffect(() => { const saved = localStorage.getItem('noteViewMode'); if (saved) setViewMode(saved) }, [])",
+            "Save view changes to localStorage: const handleViewChange = (view) => { setViewMode(view); localStorage.setItem('noteViewMode', view) }",
+            "Conditionally render: {viewMode === 'grid' ? <NotesGrid .../> : <NotesList .../>}",
+            "Pass same props (notes, handlers) to both components"
+          ]
+        }
+      ],
+      "localStorage_schema": {
+        "key": "noteViewMode",
+        "values": ["grid", "list"],
+        "default": "grid"
+      }
+    },
+    "styling_considerations": {
+      "list_view": {
+        "row_design": "White text on dark background with subtle border-bottom",
+        "hover_state": "Slight background color change (purple tint)",
+        "thumbnail": "Small square (60x60px) with rounded corners",
+        "text_truncation": "Use line-clamp-1 for title, line-clamp-2 for content preview",
+        "spacing": "Adequate padding between rows (py-4)"
+      },
+      "transitions": "Use CSS transitions for smooth view changes: transition-all duration-200"
+    },
+    "testing_checklist": {
+      "manual_tests": [
+        "Click grid icon - view switches to grid layout",
+        "Click list icon - view switches to list layout",
+        "Refresh page - view mode persists",
+        "Star button works in both views",
+        "Delete button works in both views",
+        "Hover effects work in both views",
+        "Search works with both views",
+        "Modal opens correctly from both views"
+      ]
+    }
+  },
+  "feature_3_sort_options": {
+    "name": "Sort Options",
+    "description": "Allow users to sort notes by date, title, or starred status",
+    "user_story": "As a user, I want to sort my notes by different criteria so I can organize and find notes more effectively",
+    "acceptance_criteria": [
+      "Sort dropdown in Header with options: Date (newest), Date (oldest), Title (A-Z), Title (Z-A), Starred first",
+      "Sorting works with both grid and list views",
+      "Sort applies to search results too",
+      "Sort preference persists in localStorage",
+      "Smooth re-ordering animation"
+    ],
+    "backend_implementation": {
+      "approach": "Add sort parameter to existing /api/notes and /api/notes/search endpoints",
+      "query_parameters": {
+        "sort": "Field to sort by: 'created_at', 'updated_at', 'title', 'is_starred'",
+        "order": "Sort direction: 'asc' or 'desc'"
+      },
+      "files_to_modify": [
+        {
+          "file": "backend/src/routes/notes.rs",
+          "action": "Update list_notes and search_notes functions",
+          "implementation": [
+            "Add sort and order to query params struct",
+            "Build ORDER BY clause dynamically based on params",
+            "Default: ORDER BY created_at DESC",
+            "Validate sort field to prevent SQL injection",
+            "For starred first: ORDER BY is_starred DESC, created_at DESC"
+          ],
+          "sql_examples": {
+            "date_newest": "ORDER BY created_at DESC",
+            "date_oldest": "ORDER BY created_at ASC",
+            "title_az": "ORDER BY LOWER(title) ASC",
+            "title_za": "ORDER BY LOWER(title) DESC",
+            "starred_first": "ORDER BY is_starred DESC, created_at DESC"
+          }
+        }
+      ],
+      "testing_commands": [
+        {
+          "description": "Sort by date ascending",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes?sort=created_at&order=asc&limit=5' -Method GET",
+          "expected": "Oldest notes first"
+        },
+        {
+          "description": "Sort by title",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes?sort=title&order=asc&limit=5' -Method GET",
+          "expected": "Notes in alphabetical order"
+        },
+        {
+          "description": "Starred first",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes?sort=is_starred&order=desc&limit=10' -Method GET",
+          "expected": "Starred notes appear first"
+        }
+      ]
+    },
+    "frontend_implementation": {
+      "new_components": [
+        {
+          "name": "SortDropdown",
+          "location": "frontend/app/components/SortDropdown.tsx",
+          "props": {
+            "sortBy": "string - current sort field",
+            "onChange": "(sortBy: string) => void"
+          },
+          "options": [
+            {
+              "label": "Newest First",
+              "value": "created_at_desc",
+              "sortField": "created_at",
+              "sortOrder": "desc"
+            },
+            {
+              "label": "Oldest First",
+              "value": "created_at_asc",
+              "sortField": "created_at",
+              "sortOrder": "asc"
+            },
+            {
+              "label": "Title (A-Z)",
+              "value": "title_asc",
+              "sortField": "title",
+              "sortOrder": "asc"
+            },
+            {
+              "label": "Title (Z-A)",
+              "value": "title_desc",
+              "sortField": "title",
+              "sortOrder": "desc"
+            },
+            {
+              "label": "Starred First",
+              "value": "starred_first",
+              "sortField": "is_starred",
+              "sortOrder": "desc"
+            }
+          ],
+          "ui_design": {
+            "type": "Dropdown menu with icon",
+            "icon": "Sort icon (arrows up/down)",
+            "menu_style": "Glassmorphism with backdrop-blur",
+            "selected_indicator": "Checkmark next to active option"
+          }
+        }
+      ],
+      "files_to_modify": [
+        {
+          "file": "frontend/app/components/Header.tsx",
+          "action": "Add SortDropdown component",
+          "implementation": [
+            "Import SortDropdown",
+            "Receive sortBy and onSortChange props from parent",
+            "Position dropdown next to view toggle"
+          ]
+        },
+        {
+          "file": "frontend/app/page.tsx",
+          "action": "Implement sort logic",
+          "implementation": [
+            "Add state: const [sortBy, setSortBy] = useState('created_at_desc')",
+            "Load from localStorage on mount",
+            "Update fetchNotes to include sort parameters: /api/notes?sort={field}&order={order}",
+            "Apply same sorting to search results",
+            "Save sort preference to localStorage on change"
+          ]
+        }
+      ],
+      "client_side_sorting": {
+        "note": "If backend sorting not implemented, can sort in frontend",
+        "implementation": "notes.sort((a, b) => { /* comparison logic */ })",
+        "when_to_use": "For small datasets (<1000 notes) or during development"
+      },
+      "localStorage_schema": {
+        "key": "noteSortMode",
+        "values": ["created_at_desc", "created_at_asc", "title_asc", "title_za", "starred_first"],
+        "default": "created_at_desc"
+      }
+    },
+    "animation_considerations": {
+      "note": "Sorting can cause jarring layout shifts",
+      "solution": "Use staggered fade-in animation on re-sorted notes",
+      "implementation": "Apply animation-delay based on index after sort"
+    },
+    "testing_checklist": {
+      "manual_tests": [
+        "Select 'Newest First' - notes ordered by recent date",
+        "Select 'Oldest First' - notes in reverse chronological order",
+        "Select 'Title A-Z' - alphabetical order",
+        "Select 'Title Z-A' - reverse alphabetical",
+        "Select 'Starred First' - starred notes at top",
+        "Refresh page - sort preference persists",
+        "Sort works with search results",
+        "Sort works in both grid and list views"
+      ]
+    }
+  },
+  "implementation_workflow": {
+    "recommended_order": [
+      {
+        "step": 1,
+        "feature": "Search Backend",
+        "tasks": [
+          "Create search endpoint in backend/src/routes/notes.rs",
+          "Register route in backend/src/main.rs",
+          "Test with PowerShell: Invoke-RestMethod",
+          "Verify case-insensitive search works"
+        ],
+        "estimated_time": "30-45 minutes"
+      },
+      {
+        "step": 2,
+        "feature": "Search Frontend",
+        "tasks": [
+          "Create SearchBar component",
+          "Add to Header",
+          "Implement debounced search in page.tsx",
+          "Add empty state to NotesGrid",
+          "Test keyboard shortcuts (Cmd+K, Escape)"
+        ],
+        "estimated_time": "45-60 minutes"
+      },
+      {
+        "step": 3,
+        "feature": "View Toggle",
+        "tasks": [
+          "Create ViewToggle component",
+          "Create NotesList component for list view",
+          "Add view state to page.tsx with localStorage",
+          "Test switching between views",
+          "Verify delete/star work in both views"
+        ],
+        "estimated_time": "60-90 minutes"
+      },
+      {
+        "step": 4,
+        "feature": "Sort Backend",
+        "tasks": [
+          "Add sort/order parameters to list_notes",
+          "Add sort/order to search_notes",
+          "Test all sort options with PowerShell",
+          "Verify SQL injection protection"
+        ],
+        "estimated_time": "30-45 minutes"
+      },
+      {
+        "step": 5,
+        "feature": "Sort Frontend",
+        "tasks": [
+          "Create SortDropdown component",
+          "Add to Header",
+          "Update fetchNotes with sort params",
+          "Add localStorage persistence",
+          "Test all sort options"
+        ],
+        "estimated_time": "45-60 minutes"
+      },
+      {
+        "step": 6,
+        "feature": "Integration Testing",
+        "tasks": [
+          "Test search + sort combination",
+          "Test search + view toggle",
+          "Test all features together",
+          "Update comprehensive-test.js with new tests",
+          "Run full Playwright test suite"
+        ],
+        "estimated_time": "30-45 minutes"
+      }
+    ],
+    "total_estimated_time": "4-6 hours"
+  },
+  "testing_strategy": {
+    "automated_tests": {
+      "playwright_additions": [
+        {
+          "scenario": "Search Functionality",
+          "tests": [
+            "Focus search with keyboard shortcut",
+            "Type query and verify results update",
+            "Clear search and verify all notes return",
+            "Search for nonexistent text and verify empty state"
+          ]
+        },
+        {
+          "scenario": "View Toggle",
+          "tests": [
+            "Click list view icon and verify layout changes",
+            "Click grid view icon and verify layout changes",
+            "Verify localStorage persistence after refresh",
+            "Verify delete/star buttons work in both views"
+          ]
+        },
+        {
+          "scenario": "Sort Options",
+          "tests": [
+            "Select each sort option and verify order",
+            "Verify sort persists after refresh",
+            "Verify sort works with search results"
+          ]
+        }
+      ]
+    },
+    "manual_testing_checklist": {
+      "cross_feature_tests": [
+        "Search + Sort: Search results are properly sorted",
+        "Search + View Toggle: Search works in both grid and list views",
+        "Sort + View Toggle: Sorting works in both views",
+        "All three together: Search, sort, and view toggle all work simultaneously"
+      ],
+      "edge_cases": [
+        "Empty search query - shows all notes",
+        "Search with special characters - doesn't break",
+        "Very long search query - truncates gracefully",
+        "Rapid view switching - no visual glitches",
+        "Changing sort while searching - results remain filtered and re-sorted"
+      ]
+    }
+  },
+  "code_quality_requirements": {
+    "typescript": "All new components must have proper TypeScript types",
+    "error_handling": "All API calls must have try-catch with user-friendly error messages",
+    "loading_states": "Show loading indicators during async operations",
+    "accessibility": "All interactive elements must have proper ARIA labels",
+    "responsive_design": "All features must work on mobile (320px) to desktop (1920px+)",
+    "performance": "Debounce search, memoize expensive computations, avoid unnecessary re-renders"
+  },
+  "success_criteria": {
+    "functional": [
+      "✅ Search returns accurate results from title and content",
+      "✅ Debounced search prevents excessive API calls",
+      "✅ View toggle switches smoothly between grid and list",
+      "✅ Sort options correctly order notes",
+      "✅ All preferences persist in localStorage",
+      "✅ Features work together without conflicts",
+      "✅ Delete and star buttons work in all contexts"
+    ],
+    "performance": [
+      "✅ Search responds within 300ms for 557 notes",
+      "✅ View toggle animation is smooth (60fps)",
+      "✅ Sort completes within 200ms",
+      "✅ No memory leaks in localStorage",
+      "✅ API calls are properly debounced/throttled"
+    ],
+    "ux": [
+      "✅ Clear visual feedback for all interactions",
+      "✅ Keyboard shortcuts work reliably",
+      "✅ Empty states are informative and helpful",
+      "✅ Loading states prevent user confusion",
+      "✅ Error messages are clear and actionable"
+    ]
+  },
+  "helpful_resources": {
+    "files_to_reference": [
+      "backend/src/routes/notes.rs - Existing note endpoints for reference",
+      "frontend/app/components/NoteCard.tsx - Card layout for list view inspiration",
+      "frontend/app/components/Header.tsx - Where new components will be added",
+      "comprehensive-test.js - Add new test scenarios here"
+    ],
+    "documentation": {
+      "next_js": "https://nextjs.org/docs",
+      "tailwind_css": "https://tailwindcss.com/docs",
+      "axum": "https://docs.rs/axum/latest/axum/",
+      "sqlx": "https://docs.rs/sqlx/latest/sqlx/",
+      "playwright": "https://playwright.dev/docs/intro"
+    }
+  },
+  "notes_for_gemini": {
+    "start_with_backend": "Always implement and test backend endpoints first before starting frontend work. This ensures the API contract is solid.",
+    "test_incrementally": "Test each feature individually before moving to the next. Don't implement all three features at once.",
+    "use_existing_patterns": "Follow the patterns established in delete/star implementation. The code style is already proven to work.",
+    "check_services_first": "Always run health-check.ps1 before starting work. If services are down, restart them first.",
+    "commit_frequently": "If using git, commit after each feature is working. This makes it easy to roll back if needed.",
+    "ask_for_clarification": "If anything is unclear, ask Steve's Claude for clarification rather than guessing."
+  },
+  "post_implementation": {
+    "update_files": [
+      "SESSION-STATE.md - Mark features as complete",
+      "comprehensive-test.js - Add new test scenarios",
+      "test-results.json - Run tests and update results"
+    ],
+    "documentation": "Create a brief README explaining how to use the new features",
+    "demo": "Take screenshots or screen recording showing the features working"
+  }
+}

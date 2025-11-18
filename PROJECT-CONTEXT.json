@@ -1,0 +1,338 @@
+{
+  "project_name": "note-app",
+  "project_description": "Personal Evernote replacement with Netflix-style UI and glassmorphism design",
+  "project_root": "C:\\dev\\note-app",
+  "objective": "Build streamlined note-taking app with core features: tags, notes, notebooks, starred notes, recently added notes. Replace bloated Evernote with gorgeous UI/UX.",
+  
+  "tech_stack": {
+    "frontend": {
+      "framework": "Next.js 14",
+      "port": 3000,
+      "language": "TypeScript",
+      "styling": "Tailwind CSS with glassmorphism effects",
+      "ui_pattern": "Netflix-inspired card interface with hover animations",
+      "key_directories": [
+        "src/app",
+        "src/components",
+        "src/lib"
+      ]
+    },
+    "backend": {
+      "framework": "Rust with Axum",
+      "port": 8080,
+      "database_library": "SQLx (type-safe queries)",
+      "key_directories": [
+        "backend/src"
+      ],
+      "database_connection": "PostgreSQL via localhost:5432"
+    },
+    "database": {
+      "type": "PostgreSQL",
+      "container": "Docker container (docker-compose)",
+      "name": "notes_db",
+      "user": "postgres",
+      "password": "postgres",
+      "port": 5432,
+      "must_start_first": true
+    }
+  },
+  
+  "current_state": {
+    "completed_features": [
+      "Successfully imported 559 notes from Evernote with 1,496 images",
+      "Netflix-style card interface with glassmorphism",
+      "Note display with modal viewing",
+      "Image handling and rendering",
+      "Dark theme with hover animations",
+      "Backend endpoints: DELETE /api/notes/:id and PUT /api/notes/:id/star"
+    ],
+    "broken_features": [
+      {
+        "feature": "Star functionality",
+        "status": "Backend endpoint exists but frontend not working",
+        "symptoms": "Star button appears but clicking does nothing"
+      },
+      {
+        "feature": "Delete functionality",
+        "status": "Backend endpoint exists but frontend not working",
+        "symptoms": "Delete button visible but non-functional"
+      }
+    ],
+    "missing_features": [
+      "Search capabilities",
+      "List view toggle",
+      "Sort options",
+      "Context menus",
+      "Tags management",
+      "Notebooks sidebar",
+      "Bulk actions",
+      "Rich text editor",
+      "Web clipper browser extension"
+    ]
+  },
+  
+  "critical_issues": {
+    "session_persistence": {
+      "problem": "PostgreSQL container and terminal sessions don't persist well in Claude Desktop",
+      "workaround": "Use PowerShell scripts for service management instead of direct terminal commands",
+      "recommendation": "Always check service status before debugging"
+    },
+    "frontend_backend_communication": {
+      "problem": "API calls from frontend to backend appear to be failing",
+      "investigation_needed": [
+        "Check if backend is actually receiving requests",
+        "Verify CORS configuration",
+        "Test endpoints directly with curl/PowerShell Invoke-RestMethod",
+        "Check browser console for errors",
+        "Verify API URL configuration in frontend"
+      ]
+    },
+    "service_startup_order": {
+      "correct_sequence": [
+        "1. Start PostgreSQL container via docker-compose",
+        "2. Restart Rust backend service",
+        "3. Start Next.js frontend dev server"
+      ],
+      "reason": "Backend can cache old database connection states"
+    }
+  },
+  
+  "mcp_tools_available": {
+    "desktop_commander": {
+      "purpose": "File operations, process management, script execution",
+      "critical_commands": [
+        "read_file",
+        "write_file",
+        "edit_block",
+        "start_process",
+        "list_processes",
+        "read_process_output"
+      ],
+      "known_issues": [
+        "Instability when combined with SESSION-STATE.md operations",
+        "Works better when session state loading is avoided at conversation start"
+      ]
+    },
+    "playwright": {
+      "purpose": "Browser automation and UI testing",
+      "use_cases": [
+        "Verify UI elements are present",
+        "Test button click functionality",
+        "Check API network requests in browser",
+        "Capture screenshots of issues",
+        "Debug frontend behavior"
+      ],
+      "recommended_for": [
+        "Testing star button clicks",
+        "Testing delete button clicks",
+        "Verifying modal functionality",
+        "Checking console errors"
+      ]
+    }
+  },
+  
+  "token_efficient_workflows": {
+    "description": "Critical: Claude Desktop sessions end when token limit reached. Use these workflows to extend sessions from 5-10 minutes to 30-60 minutes.",
+    "workflow_directory": "C:\\dev\\note-app\\workflows",
+    "required_scripts": {
+      "health-check.ps1": {
+        "purpose": "Check port availability and container status",
+        "usage": "Run first in every session",
+        "returns": "Port 3000 (frontend), Port 8080 (backend), Docker container status"
+      },
+      "restart-services.ps1": {
+        "purpose": "Properly restart all services in correct order",
+        "usage": "When services are down or data appears missing"
+      },
+      "find-notes.py": {
+        "purpose": "Query database directly without reading large files",
+        "usage": "Verify data exists before debugging frontend",
+        "requires": "psycopg2 library"
+      },
+      "batch-edit.py": {
+        "purpose": "Modify multiple files in one operation",
+        "usage": "Instead of multiple edit_block calls"
+      }
+    },
+    "session_state_file": {
+      "path": "C:\\dev\\note-app\\SESSION-STATE.md",
+      "purpose": "Contains current development state to minimize context loading",
+      "recommendation": "Read at session start ONLY if needed, prefer JSON context instead"
+    }
+  },
+  
+  "troubleshooting_methodology": {
+    "layered_testing_approach": [
+      {
+        "layer": "Database",
+        "method": "Direct PostgreSQL queries via docker exec",
+        "commands": [
+          "docker exec -it notes-db psql -U postgres -d notes_db -c 'SELECT id, title, is_starred FROM notes LIMIT 5;'"
+        ],
+        "verifies": "Data exists and is correct"
+      },
+      {
+        "layer": "Backend API",
+        "method": "Direct HTTP requests with PowerShell or curl",
+        "commands": [
+          "Invoke-RestMethod -Uri http://localhost:8080/api/notes -Method GET",
+          "Invoke-RestMethod -Uri http://localhost:8080/api/notes/1/star -Method PUT",
+          "Invoke-RestMethod -Uri http://localhost:8080/api/notes/1 -Method DELETE"
+        ],
+        "verifies": "Backend endpoints work correctly"
+      },
+      {
+        "layer": "Frontend",
+        "method": "Browser testing with Playwright MCP",
+        "actions": [
+          "Navigate to http://localhost:3000",
+          "Check browser console for errors",
+          "Click star button and observe network tab",
+          "Click delete button and observe network tab",
+          "Verify API calls are being made"
+        ],
+        "verifies": "Frontend properly communicates with backend"
+      }
+    ],
+    "common_issues": {
+      "backend_not_running": {
+        "symptoms": "Frontend shows loading forever, API requests fail",
+        "solution": "Run restart-services.ps1 or manually start backend"
+      },
+      "database_empty": {
+        "symptoms": "No notes displayed despite import",
+        "solution": "Check database directly, may need backend restart"
+      },
+      "cors_errors": {
+        "symptoms": "Browser console shows CORS policy errors",
+        "solution": "Check backend CORS configuration in Rust code"
+      },
+      "frontend_env_misconfigured": {
+        "symptoms": "API calls going to wrong URL",
+        "solution": "Check NEXT_PUBLIC_API_URL in .env.local"
+      }
+    }
+  },
+  
+  "file_structure": {
+    "frontend_key_files": [
+      "src/app/page.tsx - Main notes grid view",
+      "src/components/NoteCard.tsx - Individual note card with star/delete buttons",
+      "src/components/NoteModal.tsx - Modal for viewing note details",
+      "src/lib/api.ts - API client functions",
+      ".env.local - Environment variables including API URL"
+    ],
+    "backend_key_files": [
+      "backend/src/main.rs - Server setup and routes",
+      "backend/src/handlers.rs - API endpoint handlers",
+      "backend/src/models.rs - Database models",
+      "backend/Cargo.toml - Dependencies"
+    ],
+    "database_files": [
+      "docker-compose.yml - PostgreSQL container configuration",
+      "backend/migrations - Database schema migrations"
+    ],
+    "workflow_files": [
+      "workflows/health-check.ps1",
+      "workflows/restart-services.ps1",
+      "workflows/find-notes.py",
+      "workflows/batch-edit.py"
+    ]
+  },
+  
+  "debugging_star_and_delete": {
+    "priority": "HIGH - These are currently broken",
+    "investigation_steps": [
+      {
+        "step": 1,
+        "action": "Verify backend is running and responding",
+        "command": "Invoke-RestMethod -Uri http://localhost:8080/api/notes -Method GET | Select-Object -First 1"
+      },
+      {
+        "step": 2,
+        "action": "Test star endpoint directly",
+        "command": "Invoke-RestMethod -Uri http://localhost:8080/api/notes/1/star -Method PUT"
+      },
+      {
+        "step": 3,
+        "action": "Test delete endpoint directly",
+        "command": "Invoke-RestMethod -Uri http://localhost:8080/api/notes/1 -Method DELETE"
+      },
+      {
+        "step": 4,
+        "action": "Use Playwright to click buttons and check network requests",
+        "details": "Navigate to localhost:3000, click star button, observe network tab for API calls"
+      },
+      {
+        "step": 5,
+        "action": "Check frontend code for event handlers",
+        "files_to_review": [
+          "src/components/NoteCard.tsx - Look for onClick handlers",
+          "src/lib/api.ts - Verify API functions exist and are correct"
+        ]
+      }
+    ]
+  },
+  
+  "development_preferences": {
+    "environment": "Windows with PowerShell",
+    "python_status": "Not in PATH, use PowerShell scripts when possible",
+    "preferred_ide": "Claude Desktop (natural conversation) > Claude Code (backup)",
+    "code_style": "Concise, efficient, minimal token usage",
+    "response_format": "Write code to files rather than output in chat"
+  },
+  
+  "immediate_actions_for_new_session": [
+    "1. Run: C:\\dev\\note-app\\workflows\\health-check.ps1",
+    "2. If services down: C:\\dev\\note-app\\workflows\\restart-services.ps1",
+    "3. Test backend directly: Invoke-RestMethod -Uri http://localhost:8080/api/notes -Method GET",
+    "4. Use Playwright to navigate to http://localhost:3000 and inspect buttons",
+    "5. Identify why star/delete buttons aren't triggering API calls",
+    "6. Fix frontend event handlers or API client functions",
+    "7. Test fixes with Playwright automation"
+  ],
+  
+  "token_saving_rules": [
+    "Use PowerShell scripts over Python (Python not in PATH)",
+    "Filter data before reading large files into context",
+    "Batch operations into single scripts",
+    "Write code to files, don't output full code in responses",
+    "One script call > many individual tool calls",
+    "Preview data with LIMIT queries before full reads"
+  ],
+  
+  "success_criteria": {
+    "phase_1_basic_functionality": [
+      "Star button toggles is_starred in database",
+      "Delete button removes note from database and UI",
+      "Search functionality works",
+      "List view toggle available",
+      "Sort options implemented",
+      "Context menus functional"
+    ],
+    "phase_2_full_feature_parity": [
+      "Tags management system",
+      "Notebooks sidebar navigation",
+      "Bulk actions (multi-select)",
+      "Rich text editor for note creation/editing",
+      "Web clipper browser extension"
+    ]
+  },
+  
+  "api_endpoints_implemented": {
+    "GET /api/notes": "Fetch all notes",
+    "GET /api/notes/:id": "Fetch single note",
+    "PUT /api/notes/:id/star": "Toggle star status",
+    "DELETE /api/notes/:id": "Delete note",
+    "POST /api/notes": "Create new note (if implemented)"
+  },
+  
+  "known_working_features": [
+    "Note display in card grid",
+    "Image rendering from imported Evernote notes",
+    "Modal view for note details",
+    "Hover animations and glassmorphism effects",
+    "Backend successfully serves note data",
+    "Database contains all imported notes and images"
+  ]
+}

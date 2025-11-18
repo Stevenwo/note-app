@@ -1,0 +1,318 @@
+{
+  "timestamp": "2025-11-18T06:21:48.055Z",
+  "scenarios": [
+    {
+      "id": "1",
+      "name": "Visual Verification - Buttons Appear on Hover",
+      "status": "PASS",
+      "steps": [
+        {
+          "step": 1,
+          "status": "PASS",
+          "note": "Page loaded"
+        },
+        {
+          "step": 2,
+          "status": "PASS",
+          "note": "Wait completed"
+        },
+        {
+          "step": 3,
+          "status": "PASS",
+          "note": "Found 552 cards"
+        },
+        {
+          "step": 4,
+          "status": "PASS",
+          "note": "Hover action completed"
+        },
+        {
+          "step": 5,
+          "status": "PASS",
+          "note": "Star button found"
+        },
+        {
+          "step": 6,
+          "status": "PASS",
+          "note": "Delete button found"
+        }
+      ],
+      "logs": [],
+      "networkActivity": []
+    },
+    {
+      "id": "2",
+      "name": "Star Functionality Test",
+      "status": "PASS",
+      "steps": [
+        {
+          "step": 3,
+          "status": "PASS",
+          "note": "Console logs",
+          "details": {
+            "hasStarringLog": true,
+            "hasFetchingLog": true,
+            "hasResponseLog": true,
+            "hasSuccessLog": true
+          }
+        },
+        {
+          "step": 4,
+          "status": "PASS",
+          "note": "Network activity",
+          "details": {
+            "hasStarRequest": true,
+            "hasSuccessResponse": true
+          }
+        },
+        {
+          "step": 5,
+          "status": "PASS",
+          "note": "UI state changed",
+          "details": {
+            "initiallyStarred": false,
+            "nowStarred": true,
+            "stateToggled": true
+          }
+        },
+        {
+          "step": 6,
+          "status": "PASS",
+          "note": "Star toggled back",
+          "details": {
+            "finalStarred": false,
+            "initiallyStarred": false,
+            "returnedToInitial": true
+          }
+        }
+      ],
+      "logs": [
+        {
+          "type": "console",
+          "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+          "timestamp": 1763446908457
+        },
+        {
+          "type": "console",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "timestamp": 1763446908508
+        },
+        {
+          "type": "console",
+          "text": "API data received: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]",
+          "timestamp": 1763446908863
+        },
+        {
+          "type": "console",
+          "text": "Notes state updated with: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]",
+          "timestamp": 1763446908864
+        },
+        {
+          "type": "console",
+          "text": "API data received: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]",
+          "timestamp": 1763446909139
+        },
+        {
+          "type": "console",
+          "text": "Notes state updated with: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]",
+          "timestamp": 1763446909140
+        },
+        {
+          "type": "console",
+          "text": "🌟 Starring note: dbb3182e-5a28-4f2e-aa21-0e394c4090d5",
+          "timestamp": 1763446924228,
+          "action": "first_click"
+        },
+        {
+          "type": "console",
+          "text": "📡 Fetching: http://localhost:8080/api/notes/dbb3182e-5a28-4f2e-aa21-0e394c4090d5/star",
+          "timestamp": 1763446924229,
+          "action": "first_click"
+        },
+        {
+          "type": "console",
+          "text": "📨 Response status: 200 true",
+          "timestamp": 1763446924243,
+          "action": "first_click"
+        },
+        {
+          "type": "console",
+          "text": "✅ Updated note: {id: dbb3182e-5a28-4f2e-aa21-0e394c4090d5, user_id: 00000000-0000-0000-0000-000000000001, notebook_id: 8b8711bb-642e-4360-8b0d-7a1bab84d48c, title: 《农广天地》 工科男的循环农业 独特的种养模式年入千万 20190620 | CCTV农业 - YouTube, content: }",
+          "timestamp": 1763446924243,
+          "action": "first_click"
+        }
+      ],
+      "networkActivity": [
+        {
+          "type": "request",
+          "method": "GET",
+          "url": "http://localhost:8080/api/notes?sort=created&order=at",
+          "timestamp": 1763446908506
+        },
+        {
+          "type": "request",
+          "method": "GET",
+          "url": "http://localhost:8080/api/notes?sort=created&order=at",
+          "timestamp": 1763446908507
+        },
+        {
+          "type": "response",
+          "status": 200,
+          "url": "http://localhost:8080/api/notes?sort=created&order=at",
+          "timestamp": 1763446908860
+        },
+        {
+          "type": "response",
+          "status": 200,
+          "url": "http://localhost:8080/api/notes?sort=created&order=at",
+          "timestamp": 1763446909113
+        },
+        {
+          "type": "request",
+          "method": "PUT",
+          "url": "http://localhost:8080/api/notes/dbb3182e-5a28-4f2e-aa21-0e394c4090d5/star",
+          "timestamp": 1763446924229,
+          "action": "first_click"
+        },
+        {
+          "type": "response",
+          "status": 200,
+          "url": "http://localhost:8080/api/notes/dbb3182e-5a28-4f2e-aa21-0e394c4090d5/star",
+          "timestamp": 1763446924242,
+          "action": "first_click"
+        }
+      ],
+      "starStateChanges": [
+        {
+          "action": "initial",
+          "starred": false,
+          "classes": "w-4 h-4 text-gray-400"
+        },
+        {
+          "action": "after_first_click",
+          "starred": true,
+          "classes": "w-4 h-4 text-yellow-400 fill-current",
+          "toggled": true
+        },
+        {
+          "action": "after_second_click",
+          "starred": false,
+          "classes": "w-4 h-4 text-gray-400",
+          "returnedToInitial": true
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Delete Functionality Test",
+      "status": "PASS",
+      "steps": [
+        {
+          "step": 1,
+          "status": "PASS",
+          "note": "Initial count: 552"
+        },
+        {
+          "step": 2,
+          "status": "PASS",
+          "note": "Card selected"
+        },
+        {
+          "step": 3,
+          "status": "PASS",
+          "note": "Delete confirmation",
+          "details": {
+            "dialogAppeared": true,
+            "dialogMessage": "Are you sure you want to delete this note?"
+          }
+        },
+        {
+          "step": 4,
+          "status": "PASS",
+          "note": "Console logs",
+          "details": {
+            "hasDeletingLog": true,
+            "hasFetchingLog": true,
+            "hasResponseLog": true,
+            "hasSuccessLog": true
+          }
+        },
+        {
+          "step": 5,
+          "status": "PASS",
+          "note": "Network activity",
+          "details": {
+            "hasDeleteRequest": true,
+            "hasSuccessResponse": true
+          }
+        },
+        {
+          "step": 6,
+          "status": "PASS",
+          "note": "Note removed from UI",
+          "details": {
+            "initialCount": 552,
+            "afterDeleteCount": 551,
+            "countDecremented": true
+          }
+        },
+        {
+          "step": 7,
+          "status": "PASS",
+          "note": "Deletion persisted",
+          "details": {
+            "afterDeleteCount": 551,
+            "afterReloadCount": 551,
+            "persistedCorrectly": true
+          }
+        }
+      ],
+      "logs": [
+        {
+          "type": "console",
+          "text": "🗑️  Deleting note: b012fcc7-e101-4422-b0a4-16235d053fb0",
+          "timestamp": 1763446931026
+        },
+        {
+          "type": "console",
+          "text": "📡 Fetching: http://localhost:8080/api/notes/b012fcc7-e101-4422-b0a4-16235d053fb0",
+          "timestamp": 1763446931026
+        },
+        {
+          "type": "console",
+          "text": "📨 Response status: 204 true",
+          "timestamp": 1763446931035
+        },
+        {
+          "type": "console",
+          "text": "✅ Note deleted successfully",
+          "timestamp": 1763446931036
+        }
+      ],
+      "networkActivity": [
+        {
+          "type": "request",
+          "method": "DELETE",
+          "url": "http://localhost:8080/api/notes/b012fcc7-e101-4422-b0a4-16235d053fb0",
+          "timestamp": 1763446931026
+        },
+        {
+          "type": "response",
+          "status": 204,
+          "url": "http://localhost:8080/api/notes/b012fcc7-e101-4422-b0a4-16235d053fb0",
+          "timestamp": 1763446931035
+        }
+      ],
+      "noteCounts": {
+        "initial": 552,
+        "afterDelete": 551,
+        "afterReload": 551
+      }
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  }
+}

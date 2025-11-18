@@ -1,0 +1,356 @@
+{
+  "task_title": "Test Note App Delete and Star Functionality",
+  "context": {
+    "description": "We are testing a note-taking app that recently had delete and star functionality added. The backend API endpoints are confirmed working via direct API tests, but we need to verify the frontend buttons are properly wired up and the UI updates correctly.",
+    "tech_stack": {
+      "frontend": "Next.js on http://localhost:3000",
+      "backend": "Rust/Axum on http://localhost:8080",
+      "database": "PostgreSQL in Docker on port 5432"
+    },
+    "recent_changes": [
+      "Added DELETE /api/notes/:id endpoint (backend)",
+      "Added PUT /api/notes/:id/star endpoint (backend)",
+      "Added delete and star buttons to NoteCard component (frontend)",
+      "Added enhanced console logging with emojis for debugging"
+    ],
+    "known_facts": {
+      "backend_tested": "Both DELETE and PUT /star endpoints work correctly via direct API calls",
+      "frontend_updated": "Enhanced logging added to handleStarNote and handleDeleteNote functions",
+      "total_notes": "559 notes imported from Evernote",
+      "user_id": "00000000-0000-0000-0000-000000000001"
+    }
+  },
+  "prerequisites": {
+    "services_check": {
+      "action": "Run health check to ensure all services are running",
+      "command": "C:\\dev\\note-app\\workflows\\health-check.ps1",
+      "expected_output": "All three services (Frontend, Backend, PostgreSQL) should show [OK] Running",
+      "if_services_down": "Run: C:\\dev\\note-app\\workflows\\restart-services.ps1"
+    }
+  },
+  "test_scenarios": [
+    {
+      "scenario_id": "1",
+      "name": "Visual Verification - Buttons Appear on Hover",
+      "priority": "HIGH",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Open browser to http://localhost:3000",
+          "playwright_command": "await page.goto('http://localhost:3000')"
+        },
+        {
+          "step": 2,
+          "action": "Wait for page to fully load",
+          "playwright_command": "await page.waitForTimeout(3000)"
+        },
+        {
+          "step": 3,
+          "action": "Count visible note cards",
+          "playwright_command": "const noteCards = await page.$$('article.note-card'); console.log('Found', noteCards.length, 'note cards')",
+          "expected": "Should see multiple note cards (up to 559)"
+        },
+        {
+          "step": 4,
+          "action": "Hover over the first note card",
+          "playwright_command": "await noteCards[0].hover()",
+          "expected": "Action buttons should fade in with opacity-0 to opacity-100 transition"
+        },
+        {
+          "step": 5,
+          "action": "Verify star button exists and is visible",
+          "playwright_command": "const starButton = await noteCards[0].$('button[title*=\"Star\"]'); console.log('Star button found:', !!starButton)",
+          "expected": "Star button should be found (true)"
+        },
+        {
+          "step": 6,
+          "action": "Verify delete button exists and is visible",
+          "playwright_command": "const deleteButton = await noteCards[0].$('button[title*=\"Delete\"]'); console.log('Delete button found:', !!deleteButton)",
+          "expected": "Delete button should be found (true)"
+        }
+      ],
+      "success_criteria": "Both star and delete buttons appear when hovering over note cards"
+    },
+    {
+      "scenario_id": "2",
+      "name": "Star Functionality Test",
+      "priority": "CRITICAL",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Open browser console to monitor network and logs",
+          "details": "Press F12 or use Playwright's console event listener"
+        },
+        {
+          "step": 2,
+          "action": "Set up console log listener",
+          "playwright_command": "page.on('console', msg => console.log('BROWSER LOG:', msg.type(), msg.text()))"
+        },
+        {
+          "step": 3,
+          "action": "Set up network request listener",
+          "playwright_command": "page.on('request', req => { if (req.url().includes('/star')) console.log('REQUEST:', req.method(), req.url()) })"
+        },
+        {
+          "step": 4,
+          "action": "Set up network response listener",
+          "playwright_command": "page.on('response', res => { if (res.url().includes('/star')) console.log('RESPONSE:', res.status(), res.url()) })"
+        },
+        {
+          "step": 5,
+          "action": "Get the first note card and record its initial state",
+          "playwright_command": "const firstCard = await page.$('article.note-card'); const initialStarState = await firstCard.$('svg.fill-current')",
+          "details": "Check if the star is already filled (is_starred: true) or empty (is_starred: false)"
+        },
+        {
+          "step": 6,
+          "action": "Hover over first note card",
+          "playwright_command": "await firstCard.hover(); await page.waitForTimeout(500)"
+        },
+        {
+          "step": 7,
+          "action": "Click the star button",
+          "playwright_command": "const starBtn = await firstCard.$('button[title*=\"Star\"]'); await starBtn.click()",
+          "expected_console_logs": [
+            "🌟 Starring note: [some-uuid]",
+            "📡 Fetching: http://localhost:8080/api/notes/[uuid]/star",
+            "📨 Response status: 200 true",
+            "✅ Updated note: [note object with toggled is_starred]"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "Wait for UI to update",
+          "playwright_command": "await page.waitForTimeout(1000)"
+        },
+        {
+          "step": 9,
+          "action": "Verify star state changed visually",
+          "details": "Check if the star SVG now has fill-current class (filled) or just stroke (empty) - opposite of initial state"
+        },
+        {
+          "step": 10,
+          "action": "Click star button again to toggle back",
+          "playwright_command": "await starBtn.click(); await page.waitForTimeout(1000)",
+          "expected": "Star should return to original state"
+        }
+      ],
+      "success_criteria": {
+        "console_logs_present": "All expected emoji logs (🌟, 📡, 📨, ✅) appear in console",
+        "network_request_made": "PUT request to /api/notes/:id/star is visible in network tab",
+        "response_status_200": "Backend responds with 200 OK",
+        "ui_updates": "Star icon visually toggles between filled and empty states",
+        "state_persists": "Refreshing the page shows the updated star state"
+      },
+      "failure_indicators": {
+        "no_console_logs": "Click event not firing - JavaScript error or event handler not attached",
+        "network_error": "CORS issue, backend down, or incorrect URL",
+        "status_not_200": "Backend error - check backend logs",
+        "ui_not_updating": "State management issue - response successful but UI not re-rendering"
+      }
+    },
+    {
+      "scenario_id": "3",
+      "name": "Delete Functionality Test",
+      "priority": "CRITICAL",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Record total number of notes before deletion",
+          "playwright_command": "const initialCount = (await page.$$('article.note-card')).length; console.log('Initial note count:', initialCount)"
+        },
+        {
+          "step": 2,
+          "action": "Set up console and network listeners (same as star test)",
+          "details": "Listen for 🗑️ emoji logs and DELETE requests"
+        },
+        {
+          "step": 3,
+          "action": "Get the last note card (to avoid losing important notes)",
+          "playwright_command": "const allCards = await page.$$('article.note-card'); const lastCard = allCards[allCards.length - 1]"
+        },
+        {
+          "step": 4,
+          "action": "Hover over the last note card",
+          "playwright_command": "await lastCard.hover(); await page.waitForTimeout(500)"
+        },
+        {
+          "step": 5,
+          "action": "Click the delete button",
+          "playwright_command": "const deleteBtn = await lastCard.$('button[title*=\"Delete\"]'); await deleteBtn.click()",
+          "note": "This will trigger a browser confirm() dialog"
+        },
+        {
+          "step": 6,
+          "action": "Handle the confirmation dialog",
+          "playwright_command": "page.on('dialog', dialog => { console.log('Dialog message:', dialog.message()); dialog.accept(); })",
+          "details": "Accept the 'Are you sure you want to delete this note?' confirmation"
+        },
+        {
+          "step": 7,
+          "action": "Wait for deletion to complete",
+          "playwright_command": "await page.waitForTimeout(2000)",
+          "expected_console_logs": [
+            "🗑️ Deleting note: [some-uuid]",
+            "📡 Fetching: http://localhost:8080/api/notes/[uuid]",
+            "📨 Response status: 204 true (or 200 true)",
+            "✅ Note deleted successfully"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "Count notes after deletion",
+          "playwright_command": "const finalCount = (await page.$$('article.note-card')).length; console.log('Final note count:', finalCount)",
+          "expected": "finalCount should equal initialCount - 1"
+        },
+        {
+          "step": 9,
+          "action": "Refresh page to verify deletion persisted",
+          "playwright_command": "await page.reload(); await page.waitForTimeout(3000); const afterReloadCount = (await page.$$('article.note-card')).length",
+          "expected": "afterReloadCount should equal finalCount (deletion persisted to database)"
+        }
+      ],
+      "success_criteria": {
+        "confirmation_dialog_appears": "Browser confirm() dialog shows with message",
+        "console_logs_present": "All expected emoji logs (🗑️, 📡, 📨, ✅) appear",
+        "network_request_made": "DELETE request to /api/notes/:id is visible",
+        "response_status_ok": "Backend responds with 204 No Content or 200 OK",
+        "ui_updates": "Note card disappears from grid immediately",
+        "count_decrements": "Total note count reduces by 1",
+        "deletion_persists": "After page refresh, note is still gone"
+      },
+      "failure_indicators": {
+        "no_dialog": "Delete button click not triggering handleDeleteNote function",
+        "dialog_dismissed": "If dialog is cancelled, no deletion should occur",
+        "no_console_logs": "Click event or dialog handling issue",
+        "network_error": "Backend communication failure",
+        "ui_not_updating": "Note remains visible despite successful API call",
+        "reappears_after_refresh": "Deletion didn't persist to database"
+      }
+    },
+    {
+      "scenario_id": "4",
+      "name": "Backend API Direct Verification",
+      "priority": "MEDIUM",
+      "purpose": "Verify backend endpoints work independently of frontend",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Get list of notes and pick one to test",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes?user_id=1&limit=5' -Method GET | ConvertTo-Json -Depth 10",
+          "expected": "JSON array of 5 notes with all properties including id, is_starred"
+        },
+        {
+          "step": 2,
+          "action": "Test star endpoint directly",
+          "command": "$noteId = 'dbb3182e-5a28-4f2e-aa21-0e394c4090d5'; Invoke-RestMethod -Uri \"http://localhost:8080/api/notes/$noteId/star\" -Method PUT -Headers @{'Content-Type'='application/json'} | ConvertTo-Json",
+          "expected": "Returns updated note with is_starred toggled"
+        },
+        {
+          "step": 3,
+          "action": "Verify the star change persisted",
+          "command": "Invoke-RestMethod -Uri \"http://localhost:8080/api/notes/$noteId\" -Method GET | Select-Object is_starred",
+          "note": "This will return 405 Method Not Allowed (GET single note not implemented), but that's expected"
+        },
+        {
+          "step": 4,
+          "action": "Test delete endpoint directly",
+          "command": "$testNoteId = '3507c68c-b18b-4b86-b32b-95cc88629e2d'; Invoke-RestMethod -Uri \"http://localhost:8080/api/notes/$testNoteId\" -Method DELETE -Headers @{'Content-Type'='application/json'}",
+          "expected": "Empty response (204 No Content) indicating success"
+        },
+        {
+          "step": 5,
+          "action": "Verify the note was deleted",
+          "command": "Invoke-RestMethod -Uri 'http://localhost:8080/api/notes?user_id=1' -Method GET | ConvertTo-Json | Select-String -Pattern $testNoteId",
+          "expected": "Should not find the deleted note ID in the results"
+        }
+      ]
+    }
+  ],
+  "debugging_checklist": {
+    "if_buttons_not_visible": [
+      "Check if note cards are rendering at all",
+      "Hover is working (cursor changes, scale animation happens)",
+      "Inspect element to see if buttons exist in DOM with opacity-0",
+      "Check for CSS conflicts or z-index issues"
+    ],
+    "if_clicks_do_nothing": [
+      "Open browser console and check for JavaScript errors",
+      "Verify event handlers are attached (check React DevTools)",
+      "Check if e.stopPropagation() is preventing clicks",
+      "Look for onClick vs onPointerDown conflicts"
+    ],
+    "if_network_requests_not_firing": [
+      "Console shows logs but no network activity = fetch() blocked or CORS",
+      "Check browser network tab for failed requests",
+      "Verify backend is running on port 8080",
+      "Check for mixed content warnings (http vs https)"
+    ],
+    "if_backend_returns_errors": [
+      "Check backend terminal logs for error details",
+      "Verify database is running (PostgreSQL container)",
+      "Check if note IDs are valid UUIDs",
+      "Look for SQL errors or constraint violations"
+    ],
+    "if_ui_doesnt_update": [
+      "API succeeds but UI unchanged = state management issue",
+      "Check if setNotes() is being called",
+      "Verify the notes array is being modified correctly",
+      "Look for stale closures or race conditions"
+    ]
+  },
+  "files_to_inspect_if_issues": {
+    "frontend": [
+      "C:\\dev\\note-app\\frontend\\app\\page.tsx (handleStarNote, handleDeleteNote)",
+      "C:\\dev\\note-app\\frontend\\app\\components\\NoteCard.tsx (button onClick handlers)",
+      "C:\\dev\\note-app\\frontend\\app\\components\\NotesGrid.tsx (prop passing)"
+    ],
+    "backend": [
+      "C:\\dev\\note-app\\backend\\src\\routes\\notes.rs (toggle_star_note, delete_note functions)",
+      "C:\\dev\\note-app\\backend\\src\\main.rs (route registration)"
+    ],
+    "logs": [
+      "Browser console (F12)",
+      "Backend terminal output",
+      "PostgreSQL logs: docker logs note-app-db"
+    ]
+  },
+  "expected_console_log_patterns": {
+    "star_success": [
+      "🌟 Starring note: dbb3182e-5a28-4f2e-aa21-0e394c4090d5",
+      "📡 Fetching: http://localhost:8080/api/notes/dbb3182e-5a28-4f2e-aa21-0e394c4090d5/star",
+      "📨 Response status: 200 true",
+      "✅ Updated note: {id: 'dbb3182e...', is_starred: true, ...}"
+    ],
+    "delete_success": [
+      "🗑️ Deleting note: 3507c68c-b18b-4b86-b32b-95cc88629e2d",
+      "📡 Fetching: http://localhost:8080/api/notes/3507c68c-b18b-4b86-b32b-95cc88629e2d",
+      "📨 Response status: 204 true (or 200 true)",
+      "✅ Note deleted successfully"
+    ]
+  },
+  "report_requirements": {
+    "for_each_scenario": {
+      "include": [
+        "Scenario ID and name",
+        "PASS or FAIL status",
+        "All console log output (copy exact text)",
+        "Network requests observed (method, URL, status)",
+        "Screenshots or descriptions of UI state changes",
+        "Any error messages or unexpected behavior",
+        "Time taken for each operation"
+      ]
+    },
+    "summary_section": {
+      "include": [
+        "Overall assessment: Are delete and star features working?",
+        "Which scenarios passed/failed",
+        "Root cause analysis for any failures",
+        "Recommendations for fixes",
+        "Any additional observations or concerns"
+      ]
+    }
+  },
+  "success_definition": "Both star and delete functionality work end-to-end: buttons appear on hover, clicking triggers correct API calls, backend responds successfully, UI updates immediately, and changes persist after page refresh.",
+  "playwright_script_template": "See C:\\dev\\note-app\\test-buttons.js for a starting template, but modify to include all test scenarios above"
+}
