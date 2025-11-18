@@ -58,8 +58,14 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/notes/:id", delete(routes::notes::delete_note))
         .route("/api/notes/:id/star", put(routes::notes::toggle_star_note))
         .route("/api/notes/search", get(routes::notes::search_notes))
+        .route("/api/notes/:id/tags", get(routes::tags::get_note_tags))
+        .route("/api/notes/:id/tags", post(routes::tags::add_tag_to_note))
+        .route("/api/notes/:id/tags/:tag_id", delete(routes::tags::remove_tag_from_note))
         .route("/api/notebooks", get(routes::notebooks::list_notebooks))
         .route("/api/tags", get(routes::tags::list_tags))
+        .route("/api/tags", post(routes::tags::create_tag))
+        .route("/api/tags/:id", put(routes::tags::update_tag))
+        .route("/api/tags/:id", delete(routes::tags::delete_tag))
         .layer(CorsLayer::permissive())
         .with_state(state);
 

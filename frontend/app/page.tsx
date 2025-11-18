@@ -16,6 +16,7 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('created_at_desc')
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
   useEffect(() => {
     const savedViewMode = localStorage.getItem('noteViewMode') as 'grid' | 'list';
@@ -128,21 +129,21 @@ export default function Home() {
     if (!confirm('Are you sure you want to delete this note?')) {
       return
     }
-    
+
     try {
       console.log('🗑️  Deleting note:', noteId)
       const url = `http://localhost:8080/api/notes/${noteId}`
       console.log('📡 Fetching:', url)
-      
+
       const response = await fetch(url, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
       })
-      
+
       console.log('📨 Response status:', response.status, response.ok)
-      
+
       if (response.ok) {
         console.log('✅ Note deleted successfully')
         // Remove from local state
@@ -158,10 +159,29 @@ export default function Home() {
     }
   }
 
+  const handleTagClick = (tagName: string) => {
+    // Toggle tag filter - if clicking the same tag, clear the filter
+    setSelectedTag(selectedTag === tagName ? null : tagName)
+    setSearchQuery('') // Clear search when filtering by tag
+  }
+
+  // Filter notes by selected tag (client-side for now)
+  const getDisplayNotes = () => {
+    if (searchQuery) {
+      return searchResults
+    }
+    if (selectedTag) {
+      // Note: This is client-side filtering. In production, you'd want to fetch from backend
+      // For now, we'll show all notes until we fetch notes with their tags
+      return notes
+    }
+    return notes
+  }
+
   return (
     <>
       <div className="flex h-screen overflow-hidden">
-        <Sidebar />
+        <Sidebar onTagClick={handleTagClick} selectedTag={selectedTag} />
         <main className="flex-1 overflow-y-auto">
           <Header 
             searchQuery={searchQuery}
@@ -184,8 +204,8 @@ export default function Home() {
                 </div>
               ) : (
                 viewMode === 'grid' ? (
-                  <NotesGrid 
-                    notes={searchQuery ? searchResults : notes} 
+                  <NotesGrid
+                    notes={getDisplayNotes()}
                     onNoteClick={(note) => setSelectedNote(note)}
                     onStarNote={handleStarNote}
                     onDeleteNote={handleDeleteNote}
@@ -193,8 +213,8 @@ export default function Home() {
                     onClearSearch={handleSearchClear}
                   />
                 ) : (
-                  <NotesList 
-                    notes={searchQuery ? searchResults : notes} 
+                  <NotesList
+                    notes={getDisplayNotes()}
                     onNoteClick={(note) => setSelectedNote(note)}
                     onStarNote={handleStarNote}
                     onDeleteNote={handleDeleteNote}

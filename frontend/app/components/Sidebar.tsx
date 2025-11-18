@@ -1,4 +1,11 @@
-export default function Sidebar() {
+import TagsSidebar from './TagsSidebar'
+
+interface SidebarProps {
+  onTagClick?: (tagName: string) => void
+  selectedTag?: string | null
+}
+
+export default function Sidebar({ onTagClick, selectedTag }: SidebarProps = {}) {
   return (
     <aside className="w-64 glass border-r border-white/5 flex flex-col overflow-hidden">
       {/* Header */}
@@ -73,6 +80,8 @@ export default function Sidebar() {
             <span className="ml-auto text-xs text-gray-500">5</span>
           </a>
         </div>
+
+        <TagsSidebar onTagClick={onTagClick} selectedTag={selectedTag} />
       </nav>
     </aside>
   )

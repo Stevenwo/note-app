@@ -44,7 +44,9 @@ pub struct Tag {
     pub id: Uuid,
     pub user_id: Uuid,
     pub name: String,
+    pub color: String,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,4 +58,27 @@ pub struct CreateNoteRequest {
     pub is_web_clip: Option<bool>,
     pub web_clip_url: Option<String>,
     pub tags: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateTagRequest {
+    pub name: String,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateTagRequest {
+    pub name: Option<String>,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct TagWithCount {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub name: String,
+    pub color: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub note_count: i64,
 }
