@@ -26,23 +26,23 @@ Cloudflare account: owner's account (stevenwo93@...), zone `glassnotes.app`, **F
 | Status | Active |
 | Coverage | 100% of zone traffic (apex, `www`, `test`, any subdomain) |
 
-DNS (unchanged by the lockdown): `glassnotes.app`, `www`, `test` A records → the Hetzner
-VPS origin, all **Proxied** (orange cloud). Look up the origin IP in the Cloudflare DNS
-tab; it is deliberately not written in this public repo. MX/TXT records are Namecheap
-email forwarding (eforward1-5.registrar-servers.com).
+DNS: there are **no A records** (removed 2026-11-26, see "Current state" below). To
+revive, deploy to a new host and add fresh A records, Proxied (orange cloud). MX/TXT
+records are Namecheap email forwarding (eforward1-5.registrar-servers.com).
 
-## Retirement plan (decided 2026-11-26)
+## Current state (updated 2026-11-26): app retired, domain kept
 
-The owner is shutting down the Hetzner server (early Dec 2026) and is NOT migrating
-the app. Plan:
-
-1. Before shutdown: back up the Postgres DB (`pg_dump`), the server's `backend/.env`,
-   and `backend/uploads/`. Backups are kept privately by the owner, never in this repo.
-2. Turn the server off.
-3. Keep renewing the domain at Namecheap (keeps the name and any SEO value).
-4. After shutdown: delete the `glassnotes.app`, `www`, `test` A records in Cloudflare
-   (the old IP will be reassigned to someone else). Keep `lockdown-block-all` on and
-   leave the MX/TXT email-forwarding records alone.
+- The production server **glassnotes-prod** (Hetzner CPX21, Ashburn, project
+  `glassnotes-validation`) **no longer exists**. It was deleted at some point before
+  Aug 2026, and its IP has since been reassigned to another Hetzner customer. No
+  snapshots/backups remain, so the old production notes data is presumed lost.
+  The code in this repo is the surviving copy.
+- The `glassnotes.app`, `www` and `test` A records were **deleted** from Cloudflare on
+  2026-11-26 (they were pointing at the stranger's reassigned IP). The domain currently
+  serves nothing.
+- Kept: the domain itself (owner renews it at Namecheap), the `lockdown-block-all` rule,
+  and the MX/TXT email-forwarding records.
+- The other Hetzner server (`mmm-opencode`) is unrelated to this app.
 
 To revive later: restore the DB dump on a new host (e.g. the owner's Oracle Cloud ARM
 server) with Docker, ideally reachable only over Tailscale rather than publicly.
@@ -62,15 +62,16 @@ Pick one, least exposure first:
 3. **Fully public.** Toggle `lockdown-block-all` to Disabled. Only do this if the owner
    explicitly asks, and add auth to the app first.
 
-## Known gap (server side, NOT yet done)
+## If you redeploy: lock down the new server
 
-The Cloudflare rule only filters traffic that goes *through* Cloudflare. Anyone who knows
-the origin IP can still hit the Hetzner VPS directly. To close this:
+The Cloudflare rule only filters traffic that goes *through* Cloudflare. On any new host:
 
-- Hetzner Cloud Firewall (or `ufw`) on the VPS: allow inbound 80/443 **only** from
-  Cloudflare IP ranges (https://www.cloudflare.com/ips/), allow SSH only from the owner's
-  IP or via key-only auth, deny everything else.
-- Or stop the containers (`docker compose down`) while the project is paused.
+- Firewall: allow inbound 80/443 **only** from Cloudflare IP ranges
+  (https://www.cloudflare.com/ips/), SSH key-only, deny everything else. Or serve the
+  app only over Tailscale and skip public DNS entirely.
+- `docker-compose.yml` publishes Postgres on `5432:5432` with a password that is in this
+  public repo. Never deploy it as-is: remove the port mapping (or bind to `127.0.0.1`)
+  and use a real secret from a private `.env`.
 
 ## Notes for agents
 
