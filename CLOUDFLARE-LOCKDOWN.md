@@ -31,6 +31,22 @@ VPS origin, all **Proxied** (orange cloud). Look up the origin IP in the Cloudfl
 tab; it is deliberately not written in this public repo. MX/TXT records are Namecheap
 email forwarding (eforward1-5.registrar-servers.com).
 
+## Retirement plan (decided 2026-11-26)
+
+The owner is shutting down the Hetzner server (early Dec 2026) and is NOT migrating
+the app. Plan:
+
+1. Before shutdown: back up the Postgres DB (`pg_dump`), the server's `backend/.env`,
+   and `backend/uploads/`. Backups are kept privately by the owner, never in this repo.
+2. Turn the server off.
+3. Keep renewing the domain at Namecheap (keeps the name and any SEO value).
+4. After shutdown: delete the `glassnotes.app`, `www`, `test` A records in Cloudflare
+   (the old IP will be reassigned to someone else). Keep `lockdown-block-all` on and
+   leave the MX/TXT email-forwarding records alone.
+
+To revive later: restore the DB dump on a new host (e.g. the owner's Oracle Cloud ARM
+server) with Docker, ideally reachable only over Tailscale rather than publicly.
+
 ## How to unlock (resume development)
 
 Pick one, least exposure first:
